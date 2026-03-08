@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Innovative Logical Mathematics</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; text-align: center; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 15px; max-width: 500px; margin: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-top: 5px solid #3498db; }
+        .hidden { display: none !important; }
+        input, select { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .btn-primary { background: #3498db; color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; }
+        .btn-admin { background: #e74c3c; color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; margin-top: 10px; cursor: pointer; }
+        .grade-btn { background: #8e44ad; color: white; padding: 15px; margin: 5px; border: none; border-radius: 8px; width: 45%; cursor: pointer; }
+        .admin-card { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee; text-align: left; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div id="login-section" class="container">
+        <h2>Innovative Logical Mathematics</h2>
+        <form id="loginForm">
+            <input type="text" id="loginPhone" placeholder="දුරකථන අංකය (උදා: 0771234567)" required>
+            <input type="password" id="loginPass" placeholder="මුරපදය (Password)" required>
+            <button type="submit" class="btn-primary">ඇතුළු වන්න (Login)</button>
+            <button type="button" class="btn-admin" onclick="showSection('register-section')">නව ගිණුමක් සාදන්න</button>
+        </form>
+    </div>
+
+    <div id="register-section" class="container hidden">
+        <h3>නව ගිණුමක් සාදන්න</h3>
+        <form id="regForm">
+            <input type="text" id="regName" placeholder="ඔබේ සම්පූර්ණ නම" required>
+            <input type="tel" id="regWhatsApp" placeholder="WhatsApp අංකය" required>
+            <input type="password" id="regPass" placeholder="අලුත් මුරපදයක් (Password)" required>
+            <button type="submit" class="btn-primary">ලියාපදිංචි වන්න</button>
+            <button type="button" class="btn-admin" style="background:#95a5a6" onclick="showSection('login-section')">ආපසු</button>
+        </form>
+    </div>
+
+    <div id="student-dashboard" class="container hidden">
+        <h3 id="welcome-msg">ආයුබෝවන්</h3>
+        <div id="grade-select">
+            <p>පන්තිය තෝරන්න:</p>
+            <button class="grade-btn" onclick="openMonthSelect('6')">Grade 6</button>
+            <button class="grade-btn" onclick="openMonthSelect('11')">Grade 11</button>
+        </div>
+        <div id="month-select" class="hidden">
+            <p id="grade-title" style="font-weight:bold; color:#2c3e50;"></p>
+            <select id="monthSelector" onchange="loadContent()">
+                <option value="">මාසය තෝරන්න</option>
+                <option value="january">January</option>
+                <option value="february">February</option>
+            </select>
+            <div id="content-display" class="hidden">
+                <div id="pay-msg" class="hidden" style="color:red; padding:15px; background:#ffeaa7; border-radius:8px;">
+                    ගෙවීම් කර නැත! කරුණාකර රිසිට් පත එවන්න. <br><br>
+                    <button onclick="sendSlip()" class="btn-primary" style="background:#e67e22">Send Slip via WhatsApp</button>
+                </div>
+                <div id="video-msg" class="hidden">
+                    <iframe id="vPlayer" width="100%" height="250" src="" frameborder="0" allowfullscreen></iframe>
+                    <a id="tuteLink" href="#" target="_blank"><button class="btn-primary" style="margin-top:10px;">Download Tute (PDF)</button></a></div>
+            </div>
+            <button class="btn-admin" style="background:#95a5a6" onclick="location.reload()">Logout</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="container hidden" style="max-width: 600px;">
+        <h2 style="color:#e74c3c">Admin Control Panel</h2>
+        <div class="admin-card">
+            <h4>1. වීඩියෝ සහ ටියුට් අප්ලෝඩ්</h4>
+            <select id="admGrade"><option value="6">Grade 6</option><option value="11">Grade 11</option></select>
+            <select id="admMonth"><option value="january">January</option><option value="february">February</option></select>
+            <input type="text" id="admVid" placeholder="YouTube Video ID (උදා: dQw4w9WgXcQ)">
+            <input type="text" id="admTute" placeholder="Tute PDF Link (Google Drive)">
+            <button class="btn-primary" onclick="uploadContent()">Update Content</button>
+        </div>
+        <div class="admin-card">
+            <h4>2. පේමන්ට් ඇපෘෘ කිරීම (Approve)</h4>
+            <div id="student-list" style="max-height: 250px; overflow-y: auto; border:1px solid #ddd; padding:5px;"></div>
+        </div>
+        <button class="btn-admin" onclick="location.reload()">Logout</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyAya398BOub-B20L5Z09BuhEfYEWtshV1A",
+          authDomain: "cka-7ed22.firebaseapp.com",
+          projectId: "cka-7ed22",
+          storageBucket: "cka-7ed22.firebasestorage.app",
+          messagingSenderId: "160137461273",
+          appId: "1:160137461273:web:5f2efc3efbf38ca36ab488",
+          databaseURL: "https://cka-7ed22-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let curPhone = "", curGrade = "", curName = "";
+
+        function showSection(id) {
+            document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // Registration Logic
+        document.getElementById('regForm').onsubmit = function(e) {
+            e.preventDefault();
+            const nm = document.getElementById('regName').value;
+            const ph = document.getElementById('regWhatsApp').value;
+            const ps = document.getElementById('regPass').value;
+            db.ref('students/' + ph).set({ name: nm, password: ps }).then(() => {
+                alert("ලියාපදිංචිය සාර්ථකයි! දැන් ඇතුළු වන්න.");
+                showSection('login-section');
+            });
+        };
+
+        // Login Logic
+        document.getElementById('loginForm').onsubmit = function(e) {
+            e.preventDefault();
+            const ph = document.getElementById('loginPhone').value;
+            const ps = document.getElementById('loginPass').value;
+
+            if(ph === "admin" && ps === "charith123") {
+                showSection('admin-panel');
+                loadStudentList();
+                return;
+            }
+
+            db.ref('students/' + ph).once('value', snap => {
+                const u = snap.val();
+                if(snap.exists() && u.password === ps) {
+                    curPhone = ph; curName = u.name;
+                    document.getElementById('welcome-msg').innerText = "ආයුබෝවන් " + curName;
+                    showSection('student-dashboard');
+                } else { alert("දුරකථන අංකය හෝ මුරපදය වැරදියි!"); }
+            });
+        };
+
+        function openMonthSelect(g) {
+            curGrade = g;
+            document.getElementById('grade-title').innerText = "Grade " + g + " - සිසුන් සඳහා";
+            document.getElementById('grade-select').classList.add('hidden');
+            document.getElementById('month-select').classList.remove('hidden');
+        }
+
+        function loadContent() {
+            const m = document.getElementById('monthSelector').value;
+            if(!m) return;
+            document.getElementById('content-display').classList.remove('hidden');db.ref(students/${curPhone}/payments/${curGrade}/${m}).on('value', s => {
+                if(s.val() === "paid") {
+                    document.getElementById('pay-msg').classList.add('hidden');
+                    document.getElementById('video-msg').classList.remove('hidden');
+                    db.ref(content/${curGrade}/${m}).once('value', cs => {
+                        const data = cs.val();
+                        if(data) {
+                            document.getElementById('vPlayer').src = "https://www.youtube.com/embed/" + data.vid;
+                            document.getElementById('tuteLink').href = data.tute;
+                        }
+                    });
+                } else {
+                    document.getElementById('pay-msg').classList.remove('hidden');
+                    document.getElementById('video-msg').classList.add('hidden');
+                }
+            });
+        }
+
+        function uploadContent() {
+            const g = document.getElementById('admGrade').value;
+            const m = document.getElementById('admMonth').value;
+            const v = document.getElementById('admVid').value;
+            const t = document.getElementById('admTute').value;
+            db.ref(content/${g}/${m}).set({ vid: v, tute: t }).then(() => alert("පාඩම් යාවත්කාලීන කරන ලදී!"));
+        }
+
+        function loadStudentList() {
+            db.ref('students').on('value', snap => {
+                let html = "";
+                snap.forEach(child => {
+                    const s = child.val();
+                    const p = child.key;
+                    html += <div style="border-bottom:1px solid #ccc; padding:10px;">
+                        <b>${s.name}</b> (${p})<br>
+                        <button onclick="approve('${p}', '11', 'january')">Approve G11 Jan</button>
+                        <button onclick="approve('${p}', '6', 'january')" style="background:#2ecc71; border:none; color:white; padding:5px; margin-left:5px;">Approve G6 Jan</button>
+                    </div>;
+                });
+                document.getElementById('student-list').innerHTML = html;
+            });
+        }
+
+        function approve(ph, g, m) {
+            db.ref(students/${ph}/payments/${g}/${m}).set("paid").then(() => alert(ph + " සඳහා ගෙවීම් තහවුරු කරන ලදී!"));
+        }
+        
+        function sendSlip() {
+            const m = document.getElementById('monthSelector').value;
+            window.open(https://wa.me/94723650780?text=මම Grade ${curGrade} ${m} මාසය සඳහා ගෙවීම් කළා. කරුණාකර මාව ඇතුළත් කරගන්න., '_blank');
+        }
+    </script>
+</body>
+</html>
