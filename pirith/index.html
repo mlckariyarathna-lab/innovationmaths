@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Innovative Logical Mathematics</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; text-align: center; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 15px; max-width: 450px; margin: auto; box-shadow: 0px 10px 25px rgba(0,0,0,0.1); }
+        .hidden { display: none !important; }
+        input, select { width: 95%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+        .btn-primary { background: #3498db; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-secondary { background: #2ecc71; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
+        .grade-btn { background: #8e44ad; color: white; padding: 15px; margin: 5px; border: none; border-radius: 8px; width: 45%; cursor: pointer; font-weight: bold; }
+        .month-btn { background: #2980b9; color: white; padding: 10px; margin: 5px; border: none; border-radius: 5px; width: 30%; cursor: pointer; font-size: 12px; }
+        .status-box { padding: 15px; border-radius: 10px; margin-top: 15px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .post-img { width: 100%; border-radius: 10px; margin-bottom: 15px; }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div id="login-section" class="container">
+        <h2>Innovative Logical Mathematics</h2>
+        <img src="post-image.jpg" class="post-img" onerror="this.src='https://via.placeholder.com/300x200?text=Innovative+Maths'">
+        <form id="loginForm">
+            <input type="tel" id="loginPhone" placeholder="WhatsApp Number" required>
+            <input type="password" id="loginPass" placeholder="Password" required>
+            <button type="submit" class="btn-primary">Classroom එකට ඇතුළු වන්න</button>
+            <button type="button" class="btn-secondary" onclick="showSection('register-section')">නව ගිණුමක් සාදන්න</button>
+        </form>
+    </div>
+
+    <div id="register-section" class="container hidden">
+        <h3>නව ගිණුමක් සාදන්න</h3>
+        <form id="regForm">
+            <input type="text" id="regName" placeholder="සම්පූර්ණ නම" required>
+            <input type="text" id="regAddress" placeholder="ලිපිනය" required>
+            <input type="tel" id="regWhatsApp" placeholder="WhatsApp අංකය" required>
+            <input type="password" id="regPass" placeholder="මුරපදය" required>
+            <button type="submit" class="btn-primary">ලියාපදිංචි වන්න</button>
+            <button type="button" class="btn-secondary" style="background:#95a5a6" onclick="showSection('login-section')">ආපසු</button>
+        </form>
+    </div>
+
+    <div id="grade-section" class="container hidden">
+        <h3>ඔබේ ශ්‍රේණිය තෝරන්න</h3>
+        <button class="grade-btn" onclick="selectGrade('6')">Grade 6</button>
+        <button class="grade-btn" onclick="selectGrade('7')">Grade 7</button>
+        <button class="grade-btn" onclick="selectGrade('8')">Grade 8</button>
+        <button class="grade-btn" onclick="selectGrade('9')">Grade 9</button>
+        <button class="grade-btn" onclick="selectGrade('10')">Grade 10</button>
+        <button class="grade-btn" onclick="selectGrade('11')">Grade 11</button>
+    </div>
+
+    <div id="month-section" class="container hidden">
+        <h3 id="selected-grade-msg">Grade</h3>
+        <p>මාසය තෝරන්න</p>
+        <div id="month-buttons">
+            </div>
+        <button class="btn-secondary" style="background:#95a5a6" onclick="showSection('grade-section')">ශ්‍රේණිය වෙනස් කරන්න</button>
+    </div>
+
+    <div id="content-section" class="container hidden">
+        <h3 id="content-title">මාසය</h3><div id="payment-area" class="hidden">
+            <div class="status-box">මෙම මාසය සඳහා ගෙවීම් තහවුරු කර නොමැත.</div>
+            <button class="btn-primary" style="background:#e67e22; margin-top:15px;" onclick="sendSlip()">Send Slip to WhatsApp</button>
+        </div>
+
+        <div id="video-area" class="hidden">
+            <div style="background:#d4edda; color:#155724; padding:10px; border-radius:8px; margin-bottom:10px;">Access Granted!</div>
+            <iframe id="videoPlayer" width="100%" height="220" src="" frameborder="0" allowfullscreen></iframe>
+            <button class="btn-primary" style="margin-top:10px;">සජීවී පන්ති සබැඳිය (Zoom)</button>
+            <button class="btn-secondary">අද දවසේ නිබන්ධනය (PDF)</button>
+        </div>
+
+        <button class="btn-secondary" style="background:#95a5a6" onclick="showSection('month-section')">ආපසු මාස තේරීමට</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyAya398BOub-B20L5Z09BuhEfYEWtshV1A",
+          authDomain: "cka-7ed22.firebaseapp.com",
+          projectId: "cka-7ed22",
+          storageBucket: "cka-7ed22.firebasestorage.app",
+          messagingSenderId: "160137461273",
+          appId: "1:160137461273:web:5f2efc3efbf38ca36ab488",
+          databaseURL: "https://cka-7ed22-default-rtdb.firebaseio.com"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let currentUserPhone = "", userName = "", userGrade = "", selectedMonth = "";
+
+        function showSection(id) {
+            document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // REGISTER
+        document.getElementById('regForm').onsubmit = function(e) {
+            e.preventDefault();
+            const phone = document.getElementById('regWhatsApp').value;
+            const data = {
+                name: document.getElementById('regName').value,
+                address: document.getElementById('regAddress').value,
+                password: document.getElementById('regPass').value,
+                payments: { /* මුලින්ම පේමන්ට් හිස් */ }
+            };
+            db.ref('students/' + phone).set(data).then(() => {
+                alert("ලියාපදිංචිය සාර්ථකයි!");
+                showSection('login-section');
+            });
+        };
+
+        // LOGIN
+        document.getElementById('loginForm').onsubmit = function(e) {
+            e.preventDefault();
+            const phone = document.getElementById('loginPhone').value;
+            const pass = document.getElementById('loginPass').value;
+            db.ref('students/' + phone).once('value').then(snap => {
+                const user = snap.val();
+                if(snap.exists() && user.password === pass) {
+                    currentUserPhone = phone;
+                    userName = user.name;
+                    showSection('grade-section');
+                } else {
+                    alert("විස්තර වැරදියි!");
+                }
+            });
+        };
+
+        // SELECT GRADE
+        function selectGrade(grade) {
+            userGrade = grade;
+            document.getElementById('selected-grade-msg').innerText = "Grade " + grade;
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            let html = "";
+            months.forEach(m => {
+                html += <button class="month-btn" onclick="selectMonth('${m}')">${m}</button>;
+            });
+            document.getElementById('month-buttons').innerHTML = html;
+            showSection('month-section');
+        }
+
+        // SELECT MONTH & CHECK ACCESS
+        function selectMonth(month) {
+            selectedMonth = month.toLowerCase();
+            document.getElementById('content-title').innerText = month + " - Grade " + userGrade;// Firebase එකේ පේමන්ට් චෙක් කරනවා
+            db.ref(students/${currentUserPhone}/payments/${userGrade}/${selectedMonth}).on('value', snap => {
+                if(snap.val() === "paid") {
+                    document.getElementById('video-area').classList.remove('hidden');
+                    document.getElementById('payment-area').classList.add('hidden');
+                    document.getElementById('videoPlayer').src = "https://www.youtube.com/embed/dQw4w9WgXcQ"; // මෙතනට ලින්ක් එක දාන්න
+                } else {
+                    document.getElementById('video-area').classList.add('hidden');
+                    document.getElementById('payment-area').classList.remove('hidden');
+                }
+                showSection('content-section');
+            });
+        }
+
+        function sendSlip() {
+            const msg = ආයුබෝවන් සර්, මම ${userName}. මම Grade ${userGrade} පන්තියේ ${selectedMonth} මාසය සඳහා ගෙවීම් කළා. කරුණාකර මාව සක්‍රීය කරන්න. (Phone: ${currentUserPhone});
+            window.open(https://wa.me/94723650780?text=${encodeURIComponent(msg)}, '_blank');
+        }
+    </script>
+</body>
+</html>
